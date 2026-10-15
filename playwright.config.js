@@ -26,9 +26,12 @@ export default defineConfig({
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('')`. */
-    // baseURL: 'http://localhost:3000',
+    baseURL: process.env.RIDE_BASE_URL ?? 'https://internal-com.sixt.io',
+    ...(process.env.RIDE_STORAGE_STATE
+      ? { storageState: process.env.RIDE_STORAGE_STATE }
+      : {}),
 
+    /* Base URL to use in actions like `await page.goto('')`. */
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
   },
@@ -78,4 +81,3 @@ export default defineConfig({
   //   reuseExistingServer: !process.env.CI,
   // },
 });
-
