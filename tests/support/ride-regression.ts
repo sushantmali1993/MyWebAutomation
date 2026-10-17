@@ -40,8 +40,18 @@ export async function selectSavedPaymentMethod(
   const paymentMethod = page.getByLabel(
     new RegExp(`(?:^|\\D)${lastFourDigits}(?:\\D|$)`),
   );
+
+  if (!(await paymentMethod.count())) {
+    const viewAll = page.getByRole("button", {
+      name: "View all payment methods",
+    });
+    if (await viewAll.isVisible()) {
+      await viewAll.click();
+    }
+  }
+
   await expect(paymentMethod).toHaveCount(1);
-  await paymentMethod.check();
+  await paymentMethod.locator("xpath=..").click();
   await expect(paymentMethod).toBeChecked();
 }
 
@@ -102,7 +112,10 @@ export async function selectLocation(
   await field.fill("");
   await field.pressSequentially(query, { delay: 75 });
 
-  const result = page.getByText(suggestion, { exact: true }).last();
+  const result = page
+    .getByText(new RegExp(`^${suggestion.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i"))
+    .first();
+
   await expect(result).toBeVisible({ timeout: 25_000 });
   await result.click();
   await expect(result).toBeHidden();
@@ -168,23 +181,26 @@ export async function findRideId(
 ): Promise<string | undefined> {
   return page
     .evaluate(({ dateLabel, time, pickup, destination }) => {
-      const buttons = Array.from(
-        document.querySelectorAll<HTMLButtonElement>(
-          'button[aria-label^="Ride ID:"]',
-        ),
-      );
+      const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>("button"));
+      const dateWithoutYear = dateLabel.replace(/,\s*\d{4}$/, "");
 
       for (const button of buttons) {
+        const label = button.getAttribute("aria-label") ?? button.innerText;
+        const rideId = label.match(/Ride ID:\s*(\d+)/)?.[1];
+        if (!rideId) {
+          continue;
+        }
+
         let container: HTMLElement | null = button;
         while (container && container !== document.body) {
           const text = container.innerText;
           if (
-            text.includes(dateLabel) &&
+            (text.includes(dateLabel) || text.includes(dateWithoutYear)) &&
             text.includes(time) &&
             text.includes(pickup) &&
             (!destination || text.includes(destination))
           ) {
-            return button.getAttribute("aria-label") ?? button.innerText;
+            return `Ride ID: ${rideId}`;
           }
           container = container.parentElement;
         }

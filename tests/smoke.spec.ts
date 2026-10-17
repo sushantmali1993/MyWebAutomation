@@ -1,8 +1,12 @@
 import { test, expect } from '@playwright/test';
 
-test('Playwright documentation is reachable', async ({ page }) => {
-  await page.goto('https://playwright.dev/');
+test('SIXT ride landing page loads', async ({ page }) => {
+  await page.goto('https://internal-com.sixt.io/ride/');
 
-  await expect(page).toHaveTitle(/Playwright/);
-  await expect(page.getByRole('link', { name: 'Get started' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', {
+      name: /RELIABLE AIRPORT TRANSFERS AND PREMIUM CHAUFFEUR SERVICES/i,
+    })
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Show offers' })).toBeVisible();
 });

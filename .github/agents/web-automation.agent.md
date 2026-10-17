@@ -1,6 +1,7 @@
 ---
 name: Web Automation
 description: Explore and automate websites using the Playwright browser tools.
+model: Claude Sonnet 5.5 (copilot)
 tools: ["playwright/*"]
 ---
 

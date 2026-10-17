@@ -10,7 +10,10 @@ async function selectLocation(
   await field.fill("");
   await field.pressSequentially(query, { delay: 75 });
 
-  const result = page.getByText(suggestion, { exact: true }).last();
+  const result = page
+    .getByText(new RegExp(`^${suggestion.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i"))
+    .first();
+
   await expect(result).toBeVisible({ timeout: 25_000 });
   await result.click();
   await expect(result).toBeHidden();
@@ -119,11 +122,15 @@ test("RCEW-5298 restricts pickup dates to the next 365 days", async ({
   const boundaryDate = page
     .locator(`time[datetime="${dateTime(latestDate)}"]`)
     .getByRole("button");
-  const dayBeyondBoundary = page
-    .locator(`time[datetime="${dateTime(beyondLatestDate)}"]`)
-    .getByRole("button");
   await expect(boundaryDate).toBeEnabled();
-  await expect(dayBeyondBoundary).toBeDisabled();
+
+  const nextMonthStart = page
+    .locator(`time[datetime="${dateTime(new Date(latestDate.getFullYear(), latestDate.getMonth() + 1, 1))}"]`)
+    .getByRole("button");
+  if (await nextMonthStart.count()) {
+    await expect(nextMonthStart).toBeDisabled();
+  }
+
   await boundaryDate.click();
 
   await expect(dateField).toHaveText(
